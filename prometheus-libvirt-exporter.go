@@ -3,14 +3,15 @@ package main
 import (
 	"encoding/xml"
 	"flag"
-	"github.com/digitalocean/go-libvirt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/zhangjianweibj/prometheus-libvirt-exporter/libvirt_schema"
 	"log"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/digitalocean/go-libvirt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/zhangjianweibj/prometheus-libvirt-exporter/libvirt_schema"
 )
 
 var (
@@ -133,13 +134,13 @@ var (
 func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libvirt.Domain) error {
 	xmlDesc, err := l.DomainGetXMLDesc(*domain, 0)
 	if err != nil {
-		log.Fatalf("failed to DomainGetXMLDesc: %v", err)
+		log.Printf("failed to DomainGetXMLDesc: %v", err)
 		return err
 	}
 	var libvirtSchema libvirt_schema.Domain
 	err = xml.Unmarshal([]byte(xmlDesc), &libvirtSchema)
 	if err != nil {
-		log.Fatalf("failed to Unmarshal domains: %v", err)
+		log.Printf("failed to Unmarshal domains: %v", err)
 		return err
 	}
 
@@ -155,7 +156,7 @@ func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libv
 
 	host, err := l.ConnectGetHostname()
 	if err != nil {
-		log.Fatalf("failed to get hostname: %v", err)
+		log.Printf("failed to get hostname: %v", err)
 		return err
 	}
 
@@ -167,7 +168,7 @@ func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libv
 		domainName, instanceName, instanceId, userName, userId, projectName, projectId, domainState[libvirt_schema.DomainState(rState)], host)
 
 	if err != nil {
-		log.Fatalf("failed to get domainInfo: %v", err)
+		log.Printf("failed to get domainInfo: %v", err)
 		return err
 	}
 	ch <- prometheus.MustNewConstMetric(
@@ -204,7 +205,7 @@ func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libv
 		}
 
 		if err != nil {
-			log.Fatalf("failed to get DomainBlockStats: %v", err)
+			log.Printf("failed to get DomainBlockStats: %v", err)
 			return err
 		}
 
@@ -262,7 +263,7 @@ func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libv
 		}
 
 		if err != nil {
-			log.Fatalf("failed to get DomainInterfaceStats: %v", err)
+			log.Printf("failed to get DomainInterfaceStats: %v", err)
 			return err
 		}
 
@@ -356,20 +357,20 @@ func CollectDomain(ch chan<- prometheus.Metric, l *libvirt.Libvirt, domain *libv
 func CollectFromLibvirt(ch chan<- prometheus.Metric, uri string) error {
 	conn, err := net.DialTimeout("unix", uri, 5*time.Second)
 	if err != nil {
-		log.Fatalf("failed to dial libvirt: %v", err)
+		log.Printf("failed to dial libvirt: %v", err)
 		return err
 	}
 	defer conn.Close()
 
 	l := libvirt.New(conn)
 	if err = l.Connect(); err != nil {
-		log.Fatalf("failed to connect: %v", err)
+		log.Printf("failed to connect: %v", err)
 		return err
 	}
 
 	host, err := l.ConnectGetHostname()
 	if err != nil {
-		log.Fatalf("failed to get hostname: %v", err)
+		log.Printf("failed to get hostname: %v", err)
 		return err
 	}
 
@@ -381,7 +382,7 @@ func CollectFromLibvirt(ch chan<- prometheus.Metric, uri string) error {
 
 	domains, err := l.Domains()
 	if err != nil {
-		log.Fatalf("failed to load domain: %v", err)
+		log.Printf("failed to load domain: %v", err)
 		return err
 	}
 
@@ -397,7 +398,7 @@ func CollectFromLibvirt(ch chan<- prometheus.Metric, uri string) error {
 		err = CollectDomain(ch, l, &domain)
 		//domain.Free()
 		if err != nil {
-			log.Fatalf("failed to Collect domain: %v", err)
+			log.Printf("failed to Collect domain: %v", err)
 			return err
 		}
 	}
